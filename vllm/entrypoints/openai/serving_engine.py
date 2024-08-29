@@ -415,11 +415,11 @@ class OpenAIServing:
     def _add_lora(self, model):
         existing_lora = next((lora for lora in self.lora_requests if model.name == lora.lora_name), None)
         if not existing_lora:
-            lora = LoRAModulePath(name=model.name, local_path=model.path)
+            lora = LoRAModulePath(name=model.name, path=model.path)
             lora_request = LoRARequest(
                 lora_name=lora.name,
                 lora_int_id=len(self.lora_requests) + 1,
-                lora_local_path=lora.local_path,
+                lora_local_path=lora.path,
             )
             self.lora_requests.append(lora_request)
         return self.lora_requests[-1]
