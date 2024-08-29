@@ -82,3 +82,9 @@ class AsyncEngineClient(Protocol):
 
     async def check_health(self) -> None:
         """Raise if unhealthy"""
+
+    async def add_lora_adapter(self, lora_request: LoRARequest) -> None:
+        """Add lora adapter explicitly"""
+    
+    async def remove_lora_adapter(self, lora_id: int) -> None:
+        """Remove lora adatper explicitly"""

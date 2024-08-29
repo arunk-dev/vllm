@@ -415,11 +415,11 @@ class OpenAIServing:
     def _add_lora(self, model):
         existing_lora = next((lora for lora in self.lora_requests if model.name == lora.lora_name), None)
         if not existing_lora:
-            lora = LoRAModulePath(name=model.name, local_path=model.path)
+            lora = LoRAModulePath(name=model.name, path=model.path)
             lora_request = LoRARequest(
                 lora_name=lora.name,
                 lora_int_id=len(self.lora_requests) + 1,
-                lora_local_path=lora.local_path,
+                lora_local_path=lora.path,
             )
             self.lora_requests.append(lora_request)
         return self.lora_requests[-1]
@@ -436,26 +436,11 @@ class OpenAIServing:
         lora_request = self._add_lora(lora_add_request.model)
         try:
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None, self.engine.engine.model_executor.add_lora, lora_request
-            )
-        except RuntimeError as e:
-            self._remove_lora(lora_request.lora_name)
-            return self.create_lora_error_response(
-                message=f"Adding lora {lora_request.lora_name} failed: {e}",
-                err_type="UnprocessableEntityError",
-                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-                lora_name=lora_request.lora_name,
-            )
-        except ValueError as e:
-            self._remove_lora(lora_request.lora_name)
-            return self.create_lora_error_response(
-                message=f"Adding lora {lora_request.lora_name} failed: {e}",
-                err_type="BadRequestError",
-                status_code=HTTPStatus.BAD_REQUEST,
-                lora_name=lora_request.lora_name,
+            await loop.run_in_executor(
+                None, self.async_engine_client.add_lora_adapter, lora_request
             )
         except Exception as e:
+            logger.exception(e)
             self._remove_lora(lora_request.lora_name)
             return self.create_lora_error_response(
                 message=f"Adding lora {lora_request.lora_name} failed. {e}",
@@ -463,28 +448,29 @@ class OpenAIServing:
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 lora_name=lora_request.lora_name,
             )
-        return result
+        return True
 
     async def remove_lora_module(self, model_name) -> Union[bool, ErrorResponse]:
         lora_id = self._get_lora_id(model_name)
         if lora_id is None:
             # Return a successful response even if the model doesn't exist
             return True
+
         try:
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(
-                None, self.engine.engine.model_executor.remove_lora, lora_id
+            await loop.run_in_executor(
+                None, self.async_engine_client.remove_lora_adapter, lora_id
             )
         except Exception as e:
+            logger.exception(e)
             return self.create_lora_error_response(
                 message=f"Removing lora {model_name} failed. {e}",
                 err_type="InternalServerError",
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 lora_name=model_name,
             )
-        else:
-            self._remove_lora(model_name)
-        return result
+        self._remove_lora(model_name)
+        return True
 
     @staticmethod
     def _get_decoded_token(logprob: Logprob,

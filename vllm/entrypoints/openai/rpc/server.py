@@ -10,7 +10,8 @@ from typing_extensions import Never
 from vllm import AsyncEngineArgs, AsyncLLMEngine
 from vllm.entrypoints.openai.rpc import (VLLM_RPC_HEALTHY_STR,
                                          VLLM_RPC_SUCCESS_STR, RPCAbortRequest,
-                                         RPCGenerateRequest, RPCUtilityRequest)
+                                         RPCGenerateRequest, RPCUtilityRequest,
+                                         RPCAddLoraAdapterRequest, RPCRemoveLoraAdapterRequest)
 from vllm.logger import init_logger
 from vllm.usage.usage_lib import UsageContext
 
@@ -133,6 +134,24 @@ class AsyncEngineRPCServer:
         except Exception as e:
             await self.socket.send_multipart([identity, cloudpickle.dumps(e)])
 
+    async def add_lora_adapter(self, identity, rpc_request: RPCAddLoraAdapterRequest):
+        try:
+            self.engine.engine.model_executor.add_lora(rpc_request.lora_request)
+            await self.socket.send_multipart(
+                [identity, cloudpickle.dumps(VLLM_RPC_SUCCESS_STR)])
+        except Exception as e:
+            logger.exception(e)
+            await self.socket.send_multipart([identity, cloudpickle.dumps(e)])
+
+    async def remove_lora_adapter(self, identity, rpc_request: RPCRemoveLoraAdapterRequest):
+        try:
+            self.engine.engine.model_executor.remove_lora(rpc_request.lora_id)
+            await self.socket.send_multipart(
+                [identity, cloudpickle.dumps(VLLM_RPC_SUCCESS_STR)])
+        except Exception as e:
+            logger.exception(e)
+            await self.socket.send_multipart([identity, cloudpickle.dumps(e)])
+
     def _make_handler_coro(self, identity,
                            message) -> Coroutine[Any, Any, Never]:
         """Route the zmq message to the handler coroutine."""
@@ -167,6 +186,12 @@ class AsyncEngineRPCServer:
             else:
                 raise ValueError(f"Unknown RPCUtilityRequest type: {request}")
 
+        elif isinstance(request, RPCAddLoraAdapterRequest):
+            return self.add_lora_adapter(identity, request)
+        
+        elif isinstance(request, RPCRemoveLoraAdapterRequest):
+            return self.remove_lora_adapter(identity, request)
+            
         else:
             raise ValueError(f"Unknown RPCRequest type: {request}")
 

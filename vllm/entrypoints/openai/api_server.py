@@ -175,7 +175,7 @@ async def detokenize(request: DetokenizeRequest):
 
 @router.get("/v1/models")
 async def show_available_models():
-    models = await openai_serving_completion.show_available_models()
+    models = await openai_serving_chat.show_available_models()
     return JSONResponse(content=models.model_dump())
 
 
@@ -225,7 +225,7 @@ async def create_embedding(request: EmbeddingRequest, raw_request: Request):
     else:
         return JSONResponse(content=generator.model_dump())
 
-@app.put("/lora/models/{model_name:path}")
+@router.put("/lora/models/{model_name:path}")
 async def add_lora_module(request: LoraAddRequest, model_name: str):
     try:
         decoded_model_name = unquote(model_name)
@@ -259,7 +259,7 @@ async def add_lora_module(request: LoraAddRequest, model_name: str):
         )
 
 
-@app.delete("/lora/models/{model_name:path}")
+@router.delete("/lora/models/{model_name:path}")
 async def remove_lora_module(model_name: str):
     try:
         decoded_model_name = unquote(model_name)

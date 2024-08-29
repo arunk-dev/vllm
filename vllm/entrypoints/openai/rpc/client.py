@@ -10,7 +10,8 @@ from vllm.config import (DecodingConfig, LoRAConfig, ModelConfig,
 from vllm.entrypoints.openai.rpc import (RPC_REQUEST_TYPE,
                                          VLLM_RPC_HEALTHY_STR,
                                          VLLM_RPC_SUCCESS_STR, RPCAbortRequest,
-                                         RPCGenerateRequest, RPCUtilityRequest)
+                                         RPCGenerateRequest, RPCUtilityRequest,
+                                         RPCAddLoraAdapterRequest, RPCRemoveLoraAdapterRequest)
 from vllm.inputs import PromptInputs
 from vllm.lora.request import LoRARequest
 from vllm.outputs import EmbeddingRequestOutput, RequestOutput
@@ -94,7 +95,6 @@ class AsyncEngineRPCClient:
 
             # Await acknowledgement from RPCServer.
             response = cloudpickle.loads(await socket.recv())
-
         if not isinstance(response, str) or response != VLLM_RPC_SUCCESS_STR:
             raise ValueError(error_message)
 
@@ -246,3 +246,13 @@ class AsyncEngineRPCClient:
                      **kwargs) -> AsyncIterator[EmbeddingRequestOutput]:
         raise NotImplementedError(
             "Embeddings not supported with multiprocessing backend")
+
+    async def add_lora_adapter(self, lora_request: LoRARequest):
+        await self._send_one_way_rpc_request(
+            request=RPCAddLoraAdapterRequest(lora_request),
+            error_message=f"RPCUpdateLoraAdapterRequest failed")
+    
+    async def remove_lora_adapter(self, lora_id: int):
+        await self._send_one_way_rpc_request(
+            request=RPCRemoveLoraAdapterRequest(lora_id),
+            error_message=f"RPCRemoveLoraAdapterRequest failed")
