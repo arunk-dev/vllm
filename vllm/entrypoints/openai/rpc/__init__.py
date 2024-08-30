@@ -25,10 +25,14 @@ class RPCGenerateRequest:
 class RPCAbortRequest:
     request_id: str
 
-@dataclass
-class RPCUpdateLoraModuleRequest:
-    request_id: str
+class UpdateLoraAdapterAction(Enum):
+    ADD = 1
+    REMOVE = 2
 
+@dataclass
+class RPCUpdateLoraAdapterRequest:
+    lora_request: LoRARequest
+    update_action: UpdateLoraAdapterAction
 
 class RPCUtilityRequest(Enum):
     IS_SERVER_READY = 1
@@ -43,4 +47,4 @@ class RPCUtilityRequest(Enum):
 
 
 RPC_REQUEST_TYPE = Union[RPCGenerateRequest, RPCAbortRequest,
-                         RPCUtilityRequest]
+                         RPCUtilityRequest, RPCUpdateLoraAdapterRequest]
