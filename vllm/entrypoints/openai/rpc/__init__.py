@@ -25,6 +25,10 @@ class RPCGenerateRequest:
 class RPCAbortRequest:
     request_id: str
 
+@dataclass
+class RPCUpdateLoraModuleRequest:
+    request_id: str
+
 
 class RPCUtilityRequest(Enum):
     IS_SERVER_READY = 1
