@@ -473,6 +473,11 @@ class OpenAIServing:
         if lora_id is None:
             # Return a successful response even if the model doesn't exist
             return True
+        else:
+            result = self.async_engine_client.remove_lora_adapter(lora_id)
+            self._remove_lora(model_name)
+            return result
+        '''
         try:
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
@@ -485,9 +490,7 @@ class OpenAIServing:
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 lora_name=model_name,
             )
-        else:
-            self._remove_lora(model_name)
-        return result
+        '''
 
     @staticmethod
     def _get_decoded_token(logprob: Logprob,

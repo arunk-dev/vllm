@@ -11,7 +11,7 @@ from vllm.entrypoints.openai.rpc import (RPC_REQUEST_TYPE,
                                          VLLM_RPC_HEALTHY_STR,
                                          VLLM_RPC_SUCCESS_STR, RPCAbortRequest,
                                          RPCGenerateRequest, RPCUtilityRequest,
-                                         UpdateLoraAdapterAction, RPCUpdateLoraAdapterRequest)
+                                         RPCAddLoraAdapterRequest, RPCRemoveLoraAdapterRequest)
 from vllm.inputs import PromptInputs
 from vllm.lora.request import LoRARequest
 from vllm.outputs import EmbeddingRequestOutput, RequestOutput
@@ -249,15 +249,11 @@ class AsyncEngineRPCClient:
             "Embeddings not supported with multiprocessing backend")
 
     async def add_lora_adapter(self, lora_request: LoRARequest):
-        request = RPCUpdateLoraAdapterRequest(lora_request = lora_request,
-                                              update_action = UpdateLoraAdapterAction.ADD)
         await self._send_one_way_rpc_request(
-            request=request,
+            request=RPCAddLoraAdapterRequest(lora_request),
             error_message=f"RPCUpdateLoraAdapterRequest add failed")
     
     async def remove_lora_adapter(self, lora_id: int):
-        request = RPCUpdateLoraAdapterRequest(lora_request = lora_request,
-                                              update_action = UpdateLoraAdapterAction.REMOVE)
         await self._send_one_way_rpc_request(
-            request=request,
-            error_message=f"RPCUpdateLoraAdapterRequest remove failed")
+            request=RPCRemoveLoraAdapterRequest(lora_id),
+            error_message=f"RPCRemoveLoraAdapterRequest failed")
