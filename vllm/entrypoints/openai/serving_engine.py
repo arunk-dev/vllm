@@ -434,7 +434,18 @@ class OpenAIServing:
                 lora_name=lora_add_request.model.name,
             )
         lora_request = self._add_lora(lora_add_request.model)
-        return await self.async_engine_client.add_lora_adapter(lora_request)
+        try:
+            await self.async_engine_client.add_lora_adapter(lora_request)
+        except Exception as e:
+            logger.exception(e)
+            self._remove_lora(lora_request.lora_name)
+            return self.create_lora_error_response(
+                message=f"Adding lora {lora_request.lora_name} failed. {e}",
+                err_type="InternalServerError",
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                lora_name=lora_request.lora_name,
+            )
+        return True
         '''
         try:
             loop = asyncio.get_event_loop()
@@ -473,10 +484,19 @@ class OpenAIServing:
         if lora_id is None:
             # Return a successful response even if the model doesn't exist
             return True
-        else:
-            result = self.async_engine_client.remove_lora_adapter(lora_id)
-            self._remove_lora(model_name)
-            return result
+
+        try:
+            self.async_engine_client.remove_lora_adapter(lora_id)
+        except Exception as e:
+            logger.exception(e)
+            return self.create_lora_error_response(
+                message=f"Removing lora {model_name} failed. {e}",
+                err_type="InternalServerError",
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                lora_name=model_name,
+            )
+        self._remove_lora(model_name)
+        return True
         '''
         try:
             loop = asyncio.get_event_loop()

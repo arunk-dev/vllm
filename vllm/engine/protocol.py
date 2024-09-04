@@ -86,5 +86,5 @@ class AsyncEngineClient(Protocol):
     async def add_lora_adapter(self, lora_request: LoRARequest) -> None:
         """Add lora adapter explicitly"""
     
-    async def remove_lora_adapter(self, lora_id: int):
+    async def remove_lora_adapter(self, lora_id: int) -> None:
         """Remove lora adatper explicitly"""

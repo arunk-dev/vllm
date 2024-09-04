@@ -175,7 +175,7 @@ async def detokenize(request: DetokenizeRequest):
 
 @router.get("/v1/models")
 async def show_available_models():
-    models = await openai_serving_completion.show_available_models()
+    models = await openai_serving_chat.show_available_models()
     return JSONResponse(content=models.model_dump())
 
 
@@ -229,41 +229,30 @@ async def create_embedding(request: EmbeddingRequest, raw_request: Request):
 async def add_lora_module(request: LoraAddRequest, model_name: str):
     try:
         decoded_model_name = unquote(model_name)
-        results = await asyncio.wait_for(openai_serving_chat.add_lora_module(request, decoded_model_name), timeout=60)
+        await asyncio.wait_for(openai_serving_chat.add_lora_module(request, decoded_model_name), timeout=60)
     except asyncio.TimeoutError:
         return JSONResponse(
             status_code=408,
             content={"error": {"type": "TimeoutError", "message": "The request timed out after 60 seconds."}},
         )
     except Exception as e:
+        logger.exception(e)
         return JSONResponse(
             status_code=500,
             content={"error": {"type": "ServerError", "message": str(e)}},
         )
     models = await openai_serving_chat.show_available_models()
-    if isinstance(results, LoraErrorResponse):
-        # Use the status code from the first error response
-        status_code = results.code
-        return JSONResponse(
-            content={
-                "message": "Module(s) added failed",
-                "lora_models": models.model_dump(),
-                "error": results.model_dump(),
-            },
-            status_code=status_code,
-        )
-    else:
-        return JSONResponse(
-            content={"message": "Module(s) added successfully", "lora_models": models.model_dump(), "error": None},
-            status_code=200,
-        )
+    return JSONResponse(
+        content={"message": "Module(s) added successfully", "lora_models": models.model_dump(), "error": None},
+        status_code=200,
+    )
 
 
 @router.delete("/lora/models/{model_name:path}")
 async def remove_lora_module(model_name: str):
     try:
         decoded_model_name = unquote(model_name)
-        results = await asyncio.wait_for(openai_serving_chat.remove_lora_module(decoded_model_name), timeout=60)
+        await asyncio.wait_for(openai_serving_chat.remove_lora_module(decoded_model_name), timeout=60)
     except asyncio.TimeoutError:
         return JSONResponse(
             status_code=408,
@@ -275,21 +264,10 @@ async def remove_lora_module(model_name: str):
             content={"error": {"type": "ServerError", "message": str(e)}},
         )
     models = await openai_serving_chat.show_available_models()
-    if isinstance(results, LoraErrorResponse):
-        status_code = results.code
-        return JSONResponse(
-            content={
-                "message": "Module(s) removed failed",
-                "lora_models": models.model_dump(),
-                "error": results.model_dump(),
-            },
-            status_code=status_code,
-        )
-    else:
-        return JSONResponse(
-            content={"message": "Module(s) removed successfully", "lora_models": models.model_dump(), "error": None},
-            status_code=200,
-        )
+    return JSONResponse(
+        content={"message": "Module(s) removed successfully", "lora_models": models.model_dump(), "error": None},
+        status_code=200,
+    )
 
 
 def build_app(args: Namespace) -> FastAPI:
