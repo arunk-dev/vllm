@@ -136,15 +136,17 @@ class AsyncEngineRPCServer:
 
     async def add_lora_adapter(self, identity, rpc_request: RPCAddLoraAdapterRequest):
         try:
-            await self.engine.engine.model_executor.add_lora(rpc_request.lora_request)
+            logger.info("going to add the lora adapter")
+            self.engine.engine.model_executor.add_lora(rpc_request.lora_request)
             await self.socket.send_multipart(
                 [identity, cloudpickle.dumps(VLLM_RPC_SUCCESS_STR)])
         except Exception as e:
+            logger.exception(e)
             await self.socket.send_multipart([identity, cloudpickle.dumps(e)])
 
     async def remove_lora_adapter(self, identity, rpc_request: RPCRemoveLoraAdapterRequest):
         try:
-            await self.engine.engine.model_executor.remove_lora(rpc_request.lora_id)
+            self.engine.engine.model_executor.remove_lora(rpc_request.lora_id)
             await self.socket.send_multipart(
                 [identity, cloudpickle.dumps(VLLM_RPC_SUCCESS_STR)])
         except Exception as e:

@@ -434,8 +434,8 @@ class OpenAIServing:
                 lora_name=lora_add_request.model.name,
             )
         lora_request = self._add_lora(lora_add_request.model)
-        return self.async_engine_client.add_lora_adapter(lora_request)
-    '''
+        return await self.async_engine_client.add_lora_adapter(lora_request)
+        '''
         try:
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
@@ -466,7 +466,7 @@ class OpenAIServing:
                 lora_name=lora_request.lora_name,
             )
         return result
-    '''
+        '''
 
     async def remove_lora_module(self, model_name) -> Union[bool, ErrorResponse]:
         lora_id = self._get_lora_id(model_name)

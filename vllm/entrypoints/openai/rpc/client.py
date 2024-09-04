@@ -95,7 +95,7 @@ class AsyncEngineRPCClient:
 
             # Await acknowledgement from RPCServer.
             response = cloudpickle.loads(await socket.recv())
-
+        
         if not isinstance(response, str) or response != VLLM_RPC_SUCCESS_STR:
             raise ValueError(error_message)
 
